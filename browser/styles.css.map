@@ -1,1 +1,0 @@
-{"version":3,"sources":["./src/styles.css"],"names":[],"mappings":"AAAA,8EAA8E;AAC9E,MAAM,YAAY,CAAC,aAAa,CAAC,SAAS","file":"styles.css","sourcesContent":["/* You can add global styles to this file, and also import other style files */\nbody {width: 100vw;height: 100vh;margin: 0}\n"],"sourceRoot":"webpack:///"}

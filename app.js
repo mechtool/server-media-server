@@ -202,11 +202,13 @@ function startMediaServer(){
               }
           ]
       },
-      trans: {
-          ffmpeg: './binaries/ffmpeg.exe',
+      trans: { // Here, the parameter is a trans parameter, not a relay parameter. The hls configuration in the relay parameter is invalid
+          ffmpeg: './binaries/ffmpeg.exe',//Indicates the FFmpeg location
           tasks: [
               {
                   app: 'live',
+                  ac: 'acc',
+                  vc: 'libx264',
                   hls: true,
                   hlsFlags: '[hls_time=2:hls_list_size=3:hls_flags=delete_segments]',
                   dash: true,
