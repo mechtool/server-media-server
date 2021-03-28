@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="JavaScriptLibraryMappings">
-    <includedPredefinedLibrary name="Node.js Core" />
+    <file url="file://$PROJECT_DIR$" libraries="{server-media-server/node_modules}" />
+    <file url="PROJECT" libraries="{@types/chrome, @types/express, @types/node, node_modules, server-media-server/node_modules}" />
   </component>
 </project>

@@ -1,6 +1,6 @@
 let createError = require('http-errors'),
     express = require('express'),
-    child_process = require('child_process'),
+	child_process = require('child_process'),
     path = require('path'),
     cookieParser = require('cookie-parser'),
     logger = require('morgan'),
@@ -13,8 +13,9 @@ let createError = require('http-errors'),
     cors = require('cors'),
     server = http.createServer(app),
     WebSocketServer = require('ws').Server,
-    ffbinaries = require('ffbinaries'),
+	pathToFfmpeg = require('ffmpeg-static'),
     wss = new WebSocketServer({ server: server }),
+	shell = require('any-shell-escape'),
     NodeMediaServer = require('node-media-server');
 
 app.set('port', port);
@@ -29,7 +30,7 @@ app.use(express.static(path.join(__dirname, 'browser')));
 app.use('/', indexRouter);
 app.use('/media-server', express.static(path.join(__dirname, 'browser')));
 app.use('/users', usersRouter);
-app.use(function(req, res, next) {
+app.use(function( req, res, next) {
   next(createError(404));
 });
 app.use(function(err, req, res, next) {
@@ -42,12 +43,25 @@ app.use(function(err, req, res, next) {
   res.render('error');
 });
 
-ffbinaries.downloadBinaries(['ffmpeg', 'ffprobe'], { quiet: true, destination: __dirname + '/binaries'}, function () {
-    console.log('Downloaded ffplay and ffprobe binaries to ' + __dirname + '/binaries' + '.');
-});
 startMediaServer();
-
 wss.on('connection', (ws, req) => {
+	//Запуск команд командной оболочкой сервера
+/*	const makeMp3 = shell([
+		'ffmpeg', '-y', '-v', 'error',
+		'-i', path.join(process.cwd(), src),
+		'-acodec', 'mp3',
+		'-format', 'mp3', path.join(process.cwd(), 'media-shell')
+	])
+	
+	child_process.exec(makeMp3, (err) => {
+		if (err) {
+			console.error(err)
+			process.exit(1)
+		} else {
+			console.info('done!')
+		}
+	})
+	*/
   // Ensure that the URL starts with '/rtmp/', and extract the target RTMP URL.
 /*    let match;
     if ( !(match = req.url.match(/^\/rtmp\/(.*)$/)) ) {
@@ -58,19 +72,12 @@ wss.on('connection', (ws, req) => {
     console.log('Target RTMP URL:', rtmpUrl);*/
     // Launch FFmpeg to handle all appropriate transcoding, muxing, and RTMP.
     // If 'ffmpeg' isn't in your path, specify the full path to the ffmpeg binary.
-    const ffmpeg = child_process.spawn('./binaries/ffmpeg', [
+    const ffmpeg = child_process.spawn( pathToFfmpeg, [
         // Facebook requires an audio track, so we create a silent one here.
         // Remove this line, as well as `-shortest`, if you send audio from the browser.
         '-f', 'lavfi', '-i', 'anullsrc',
-
-        // FFmpeg will read input video from STDIN
+		// FFmpeg will read input video from STDIN
         '-i', '-',
-
-        // Because we're using a generated audio source which never ends,
-        // specify that we'll stop at end of other input.  Remove this line if you
-        // send audio from the browser.
-        '-shortest',
-
         // If we're encoding H.264 in-browser, we can set the video codec to 'copy'
         // so that we don't waste any CPU and quality with unnecessary transcoding.
         // If the browser doesn't support H.264, set the video codec to 'libx264'
@@ -88,7 +95,7 @@ wss.on('connection', (ws, req) => {
         // For debugging, you could set this to a filename like 'test.flv', and play
         // the resulting file with VLC.  Please also read the security considerations
         // later on in this tutorial.
-        'rtmp://localhost:1935/live/stream'
+        'rtmp://127.0.0.1:1935/life'
     ]);
 
     // If FFmpeg stops for any reason, close the WebSocket connection.
@@ -103,7 +110,6 @@ wss.on('connection', (ws, req) => {
     ffmpeg.stdin.on('error', (e) => {
         console.log('FFmpeg STDIN Error', e);
     });
-
     // FFmpeg outputs all of its messages to STDERR.  Let's log them to the console.
     ffmpeg.stderr.on('data', (data) => {
         console.log('FFmpeg Data Transfer:', data.toString());
@@ -173,7 +179,7 @@ function onListening() {
   var bind = typeof addr === 'string'
       ? 'pipe ' + addr
       : 'port ' + addr.port;
-  debug('Listening on ' + bind);
+  debug('http application server istening on ' + bind);
 }
 
 function startMediaServer(){
@@ -187,23 +193,22 @@ function startMediaServer(){
       },
       http: {
           port: 7000,
-          mediaroot: './media/',
           allow_origin: '*'
       },
       relay: {
-          ffmpeg: './binaries/ffmpeg.exe',
+          ffmpeg: pathToFfmpeg,
           tasks: [
               {
                   app: 'live',
                   mode: 'static',
-                  edge: 'rtsp://:554/rtsp',//rtsp
+                  edge: 'rtmp://127.0.0.1/hls',//rtsp
                   name: 'technology',
                   rtsp_transport : 'tcp', //['udp', 'tcp', 'udp_multicast', 'http']
               }
           ]
       },
       trans: { // Here, the parameter is a trans parameter, not a relay parameter. The hls configuration in the relay parameter is invalid
-          ffmpeg: './binaries/ffmpeg.exe',//Indicates the FFmpeg location
+          ffmpeg: pathToFfmpeg,
           tasks: [
               {
                   app: 'live',
@@ -223,8 +228,8 @@ function startMediaServer(){
   //подписки на события
   nms.on('preConnect', (id, args) => {
     console.log('[NodeEvent on preConnect]', `id=${id} args=${JSON.stringify(args)}`);
-    // let session = nms.getSession(id);
-    // session.reject();
+    let session = nms.getSession(id);
+    //session.reject();
   });
 
   nms.on('postConnect', (id, args) => {

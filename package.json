@@ -6,12 +6,13 @@
     "start": "node app.js"
   },
   "dependencies": {
+    "any-shell-escape": "^0.1.1",
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
     "debug": "~2.6.9",
     "ejs": "~2.6.1",
     "express": "~4.16.1",
-    "ffbinaries": "^1.1.4",
+    "ffmpeg-static": "^4.2.8",
     "http-errors": "~1.6.3",
     "morgan": "~1.9.1",
     "node-media-server": "^2.2.4",
